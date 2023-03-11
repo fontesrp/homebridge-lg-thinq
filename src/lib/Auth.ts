@@ -2,11 +2,11 @@ import crypto from 'crypto';
 import {DateTime} from 'luxon';
 import * as qs from 'qs';
 import {URL} from 'url';
-import {AuthenticationError, ManualProcessNeededErrorCode, TokenError} from '../errors';
-import * as constants from './constants';
-import type {Gateway} from './Gateway';
-import {requestClient} from './request';
-import {Session} from './Session';
+import {AuthenticationError, ManualProcessNeededErrorCode, TokenError} from '../errors/index.js';
+import * as constants from './constants.js';
+import type {Gateway} from './Gateway.js';
+import {requestClient} from './request.js';
+import {Session} from './Session.js';
 
 export class Auth {
   public lgeapi_url: string;

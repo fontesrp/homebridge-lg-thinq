@@ -1,8 +1,8 @@
-import {default as RefrigeratorV2, RefrigeratorStatus} from '../../devices/Refrigerator';
+import {default as RefrigeratorV2, RefrigeratorStatus} from '../../devices/Refrigerator.js';
 import type {CharacteristicValue, PlatformAccessory} from 'homebridge';
-import type {Device} from '../../lib/Device';
-import type {LGThinQHomebridgePlatform} from '../../platform';
-import {fToC} from '../../helper';
+import type {Device} from '../../lib/Device.js';
+import type {LGThinQHomebridgePlatform} from '../../platform.js';
+import {fToC} from '../../helper.js';
 
 export default class Refrigerator extends RefrigeratorV2 {
   constructor(

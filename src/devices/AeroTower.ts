@@ -1,7 +1,7 @@
-import AirPurifier from './AirPurifier';
-import type {LGThinQHomebridgePlatform} from '../platform';
+import AirPurifier from './AirPurifier.js';
+import type {LGThinQHomebridgePlatform} from '../platform.js';
 import type {CharacteristicValue, PlatformAccessory, Service} from 'homebridge';
-import type {Device} from '../lib/Device';
+import type {Device} from '../lib/Device.js';
 
 export enum LightBrightness {
   OFF = 0,

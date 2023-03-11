@@ -1,9 +1,9 @@
-import type {LGThinQHomebridgePlatform} from '../platform';
+import type {LGThinQHomebridgePlatform} from '../platform.js';
 import type {CharacteristicValue, PlatformAccessory} from 'homebridge';
-import type {Device} from '../lib/Device';
-import {baseDevice} from '../baseDevice';
-import type {DeviceModel} from '../lib/DeviceModel';
-import {cToF, fToC} from '../helper';
+import type {Device} from '../lib/Device.js';
+import {baseDevice} from '../baseDevice.js';
+import type {DeviceModel} from '../lib/DeviceModel.js';
+import {cToF, fToC} from '../helper.js';
 
 export default class Refrigerator extends baseDevice {
   protected serviceFreezer;

@@ -1,7 +1,7 @@
-import {default as V2, RotateSpeed} from '../../devices/AirPurifier';
+import {default as V2, RotateSpeed} from '../../devices/AirPurifier.js';
 import type {CharacteristicValue, PlatformAccessory} from 'homebridge';
-import type {Device} from '../../lib/Device';
-import type {LGThinQHomebridgePlatform} from '../../platform';
+import type {Device} from '../../lib/Device.js';
+import type {LGThinQHomebridgePlatform} from '../../platform.js';
 
 export default class AirPurifier extends V2 {
   constructor(

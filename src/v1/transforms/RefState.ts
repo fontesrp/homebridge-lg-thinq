@@ -1,5 +1,5 @@
-import type {DeviceModel} from '../../lib/DeviceModel';
-import {lookupEnumIndex, loopupEnum} from '../helper';
+import type {DeviceModel} from '../../lib/DeviceModel.js';
+import {lookupEnumIndex, loopupEnum} from '../helper.js';
 
 export enum DoorOpenState {
   OPEN = 'OPEN',

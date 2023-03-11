@@ -1,7 +1,7 @@
-import { API } from '../dist/lib/API';
-import { Auth } from '../dist/lib/Auth';
+import { API } from '../dist/lib/API.js';
+import { Auth } from '../dist/lib/Auth.js';
 import { HomebridgePluginUiServer } from '@homebridge/plugin-ui-utils';
-import { DeviceType } from '../dist/lib/constants';
+import { DeviceType } from '../dist/lib/constants.js';
 
 class UiServer extends HomebridgePluginUiServer {
   constructor () {

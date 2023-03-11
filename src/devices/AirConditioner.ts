@@ -1,9 +1,9 @@
-import {baseDevice} from '../baseDevice';
-import type {LGThinQHomebridgePlatform} from '../platform';
+import {baseDevice} from '../baseDevice.js';
+import type {LGThinQHomebridgePlatform} from '../platform.js';
 import type {CharacteristicValue, PlatformAccessory, Service} from 'homebridge';
-import type {Device} from '../lib/Device';
-import type {RangeValue} from '../lib/DeviceModel';
-import {cToF} from '../helper';
+import type {Device} from '../lib/Device.js';
+import type {RangeValue} from '../lib/DeviceModel.js';
+import {cToF} from '../helper.js';
 
 export enum FanSpeed {
   LOW = 2,

@@ -1,7 +1,7 @@
-import {default as WasherV2} from '../../devices/WasherDryer';
-import type {LGThinQHomebridgePlatform} from '../../platform';
+import {default as WasherV2} from '../../devices/WasherDryer.js';
+import type {LGThinQHomebridgePlatform} from '../../platform.js';
 import {CharacteristicValue, Perms, PlatformAccessory} from 'homebridge';
-import type {Device} from '../../lib/Device';
+import type {Device} from '../../lib/Device.js';
 
 export default class Washer extends WasherV2 {
   constructor(

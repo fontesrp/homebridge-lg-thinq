@@ -1,5 +1,5 @@
-import AirState from './AirState';
-import type {DeviceModel} from '../../lib/DeviceModel';
+import AirState from './AirState.js';
+import type {DeviceModel} from '../../lib/DeviceModel.js';
 
 export default function AirPurifierState(deviceModel: DeviceModel, decodedMonitor) {
   const airState = AirState(deviceModel, decodedMonitor);

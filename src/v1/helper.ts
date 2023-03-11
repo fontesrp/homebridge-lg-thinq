@@ -1,13 +1,13 @@
-import type {Device} from '../lib/Device';
-import {PlatformType} from '../lib/constants';
-import type {DeviceModel} from '../lib/DeviceModel';
-import AirState from './transforms/AirState';
-import WasherDryer from './transforms/WasherDryer';
-import {Washer, AC, Refrigerator, AirPurifier, RangeHood} from './devices';
-import RefState from './transforms/RefState';
+import type {Device} from '../lib/Device.js';
+import {PlatformType} from '../lib/constants.js';
+import type {DeviceModel} from '../lib/DeviceModel.js';
+import AirState from './transforms/AirState.js';
+import WasherDryer from './transforms/WasherDryer.js';
+import {Washer, AC, Refrigerator, AirPurifier, RangeHood} from './devices/index.js';
+import RefState from './transforms/RefState.js';
 import * as uuid from 'uuid';
-import AirPurifierState from './transforms/AirPurifierState';
-import HoodState from './transforms/HoodState';
+import AirPurifierState from './transforms/AirPurifierState.js';
+import HoodState from './transforms/HoodState.js';
 
 export default class Helper {
   public static make(device: Device) {

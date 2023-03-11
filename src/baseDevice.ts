@@ -1,8 +1,8 @@
-import type {LGThinQHomebridgePlatform} from './platform';
+import type {LGThinQHomebridgePlatform} from './platform.js';
 import type {PlatformAccessory} from 'homebridge';
-import type {Device} from './lib/Device';
+import type {Device} from './lib/Device.js';
 import {EventEmitter} from 'events';
-import {mergeDeep} from './helper';
+import {mergeDeep} from './helper.js';
 
 export class baseDevice extends EventEmitter {
   constructor(

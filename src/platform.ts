@@ -1,20 +1,20 @@
 import type { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service, Characteristic } from 'homebridge';
 
-import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
-import { Helper } from './helper';
-import {ThinQ} from './lib/ThinQ';
+import { PLATFORM_NAME, PLUGIN_NAME } from './settings.js';
+import { Helper } from './helper.js';
+import {ThinQ} from './lib/ThinQ.js';
 import {EventEmitter} from 'events';
-import {PlatformType} from './lib/constants';
-import {ManualProcessNeeded, NotConnectedError} from './errors';
-import type {Device} from './lib/Device';
-import type AirConditioner from './devices/AirConditioner';
-import type AirPurifier from './devices/AirPurifier';
-import type Dehumidifier from './devices/Dehumidifier';
-import type Dishwasher from './devices/Dishwasher';
-import type Refrigerator from './devices/Refrigerator';
-import type Styler from './devices/Styler';
-import type WasherDryer from './devices/WasherDryer';
-import type { RangeHood } from './v1/devices';
+import {PlatformType} from './lib/constants.js';
+import {ManualProcessNeeded, NotConnectedError} from './errors/index.js';
+import type {Device} from './lib/Device.js';
+import type AirConditioner from './devices/AirConditioner.js';
+import type AirPurifier from './devices/AirPurifier.js';
+import type Dehumidifier from './devices/Dehumidifier.js';
+import type Dishwasher from './devices/Dishwasher.js';
+import type Refrigerator from './devices/Refrigerator.js';
+import type Styler from './devices/Styler.js';
+import type WasherDryer from './devices/WasherDryer.js';
+import type { RangeHood } from './v1/devices/index.js';
 
 /**
  * HomebridgePlatform
@@ -82,6 +82,8 @@ export class LGThinQHomebridgePlatform implements DynamicPlatformPlugin {
 
         this.log.error(err.message);
         this.log.debug(err);
+
+        setTimeout(didFinishLaunching, 30000);
       });
     };
 
