@@ -1,22 +1,22 @@
 import {baseDevice} from '../baseDevice';
-import {LGThinQHomebridgePlatform} from '../platform';
-import {CharacteristicValue, Perms, PlatformAccessory} from 'homebridge';
-import {Device} from '../lib/Device';
-import {DeviceModel} from '../lib/DeviceModel';
+import type {LGThinQHomebridgePlatform} from '../platform';
+import {CharacteristicValue, Perms, PlatformAccessory, Service} from 'homebridge';
+import type {Device} from '../lib/Device';
+import type {DeviceModel} from '../lib/DeviceModel';
 
 export const NOT_RUNNING_STATUS = ['POWEROFF', 'INITIAL', 'PAUSE', 'COMPLETE', 'ERROR', 'DIAGNOSIS', 'RESERVED',
   'SLEEP', 'FOTA'];
 
 export default class Styler extends baseDevice {
-  protected serviceStyter;
+  protected serviceStyter: Service;
 
   constructor(
-    protected readonly platform: LGThinQHomebridgePlatform,
-    protected readonly accessory: PlatformAccessory,
+    protected override readonly platform: LGThinQHomebridgePlatform,
+    protected override readonly accessory: PlatformAccessory,
   ) {
     super(platform, accessory);
 
-    const device: Device = this.accessory.context.device;
+    const device: Device = this.accessory.context['device'];
 
     const {
       Service: {
@@ -43,7 +43,7 @@ export default class Styler extends baseDevice {
     });
   }
 
-  public updateAccessoryCharacteristic(device: Device) {
+  public override updateAccessoryCharacteristic(device: Device) {
     super.updateAccessoryCharacteristic(device);
 
     const {
@@ -60,39 +60,40 @@ export default class Styler extends baseDevice {
       this.Status.isError ? Characteristic.StatusFault.GENERAL_FAULT : Characteristic.StatusFault.NO_FAULT);
   }
 
-  async setActive(value: CharacteristicValue) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async setActive(_value: CharacteristicValue) {
     if (this.Status.isRemoteStartOn) {
       // turn on styler
     }
   }
 
   public get Status() {
-    return new StylerStatus(this.accessory.context.device.snapshot?.styler, this.accessory.context.device.deviceModel);
+    return new StylerStatus(this.accessory.context['device'].snapshot?.styler, this.accessory.context['device'].deviceModel);
   }
 }
 
 class StylerStatus {
-  constructor(protected data, protected deviceModel: DeviceModel) { }
+  constructor(protected data: Record<string, any>, protected deviceModel: DeviceModel) { }
 
   public get isPowerOn() {
-    return !['POWEROFF', 'POWERFAIL'].includes(this.data?.state);
+    return !['POWEROFF', 'POWERFAIL'].includes(this.data?.['state']);
   }
 
   public get isRemoteStartOn() {
-    return this.data.remoteStart === this.deviceModel.lookupMonitorName('remoteStart', '@CP_ON_EN_W');
+    return this.data['remoteStart'] === this.deviceModel.lookupMonitorName('remoteStart', '@CP_ON_EN_W');
   }
 
   public get isRunning() {
-    return this.isPowerOn && !NOT_RUNNING_STATUS.includes(this.data?.state);
+    return this.isPowerOn && !NOT_RUNNING_STATUS.includes(this.data?.['state']);
   }
 
   public get isError() {
-    return this.data?.state === 'ERROR';
+    return this.data?.['state'] === 'ERROR';
   }
 
   public get remainDuration() {
-    const remainTimeHour = this.data?.remainTimeHour || 0,
-      remainTimeMinute = this.data?.remainTimeMinute || 0;
+    const remainTimeHour = this.data?.['remainTimeHour'] || 0,
+      remainTimeMinute = this.data?.['remainTimeMinute'] || 0;
 
     let remainingDuration = 0;
     if (this.isRunning) {

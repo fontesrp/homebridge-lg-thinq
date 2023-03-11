@@ -1,23 +1,23 @@
 import {baseDevice} from '../baseDevice';
-import {LGThinQHomebridgePlatform} from '../platform';
-import {CharacteristicValue, Perms, PlatformAccessory} from 'homebridge';
-import {Device} from '../lib/Device';
+import type {LGThinQHomebridgePlatform} from '../platform';
+import {CharacteristicValue, Perms, PlatformAccessory, Service} from 'homebridge';
+import type {Device} from '../lib/Device';
 import {PlatformType} from '../lib/constants';
-import {DeviceModel} from '../lib/DeviceModel';
+import type {DeviceModel} from '../lib/DeviceModel';
 
 export const NOT_RUNNING_STATUS = ['COOLDOWN', 'POWEROFF', 'POWERFAIL', 'INITIAL', 'PAUSE', 'AUDIBLE_DIAGNOSIS', 'FIRMWARE',
   'COURSE_DOWNLOAD', 'ERROR', 'END'];
 
 export default class WasherDryer extends baseDevice {
   public isRunning = false;
-  protected serviceWasherDryer;
-  protected serviceEventFinished;
-  protected serviceDoorLock;
-  protected serviceTubCleanMaintenance;
+  protected serviceWasherDryer: Service;
+  protected serviceEventFinished: Service | undefined;
+  protected serviceDoorLock: Service | undefined;
+  protected serviceTubCleanMaintenance: Service;
 
   constructor(
-    protected readonly platform: LGThinQHomebridgePlatform,
-    protected readonly accessory: PlatformAccessory,
+    protected override readonly platform: LGThinQHomebridgePlatform,
+    protected override readonly accessory: PlatformAccessory,
   ) {
     super(platform, accessory);
 
@@ -34,7 +34,7 @@ export default class WasherDryer extends baseDevice {
       },
     } = this.platform;
 
-    const device: Device = accessory.context.device;
+    const device: Device = accessory.context['device'];
 
     this.serviceWasherDryer = accessory.getService(Valve) || accessory.addService(Valve, device.name);
     this.serviceWasherDryer.getCharacteristic(Characteristic.Active)
@@ -55,7 +55,7 @@ export default class WasherDryer extends baseDevice {
 
     // only thinq2 support door lock status
     this.serviceDoorLock = accessory.getService(LockMechanism);
-    if (this.config.washer_door_lock && device.platform === PlatformType.ThinQ2 && 'doorLock' in device.snapshot?.washerDryer) {
+    if (this.config.washer_door_lock && device.platform === PlatformType.ThinQ2 && 'doorLock' in (device.snapshot?.washerDryer || {})) {
       this.serviceDoorLock = this.serviceDoorLock || accessory.addService(LockMechanism, device.name + ' - Door');
       this.serviceDoorLock.getCharacteristic(Characteristic.LockCurrentState)
         .onSet(this.setActive.bind(this))
@@ -93,17 +93,18 @@ export default class WasherDryer extends baseDevice {
   }
 
   public get Status() {
-    return new WasherDryerStatus(this.accessory.context.device.snapshot?.washerDryer, this.accessory.context.device.deviceModel);
+    return new WasherDryerStatus(this.accessory.context['device'].snapshot?.washerDryer, this.accessory.context['device'].deviceModel);
   }
 
-  public get config() {
+  public override get config() {
     return Object.assign({}, {
       washer_trigger: false,
       washer_door_lock: false,
     }, super.config);
   }
 
-  async setActive(value: CharacteristicValue) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async setActive(_value: CharacteristicValue) {
     if (!this.Status.isRemoteStartEnable) {
       return;
     }
@@ -111,7 +112,7 @@ export default class WasherDryer extends baseDevice {
     return;
   }
 
-  public updateAccessoryCharacteristic(device: Device) {
+  public override updateAccessoryCharacteristic(device: Device) {
     super.updateAccessoryCharacteristic(device);
 
     const {
@@ -134,7 +135,7 @@ export default class WasherDryer extends baseDevice {
     }
   }
 
-  public update(snapshot) {
+  public override update(snapshot: { dishwasher?: any; washerDryer?: any }) {
     super.update(snapshot);
 
     const washerDryer = snapshot.washerDryer;
@@ -162,7 +163,9 @@ export default class WasherDryer extends baseDevice {
 
         // turn it off after 10 minute
         setTimeout(() => {
-          this.serviceEventFinished.updateCharacteristic(OccupancyDetected, OccupancyDetected.OCCUPANCY_NOT_DETECTED);
+          if (this.serviceEventFinished) {
+            this.serviceEventFinished.updateCharacteristic(OccupancyDetected, OccupancyDetected.OCCUPANCY_NOT_DETECTED);
+          }
         }, 10000 * 60);
       }
 
@@ -180,32 +183,32 @@ export default class WasherDryer extends baseDevice {
 }
 
 export class WasherDryerStatus {
-  constructor(protected data, protected deviceModel: DeviceModel) {
+  constructor(protected data: Record<string, any>, protected deviceModel: DeviceModel) {
   }
 
   public get isPowerOn() {
-    return !['POWEROFF', 'POWERFAIL'].includes(this.data?.state);
+    return !['POWEROFF', 'POWERFAIL'].includes(this.data?.['state']);
   }
 
   public get isRunning() {
-    return this.isPowerOn && !NOT_RUNNING_STATUS.includes(this.data?.state);
+    return this.isPowerOn && !NOT_RUNNING_STATUS.includes(this.data?.['state']);
   }
 
   public get isError() {
-    return this.data?.state === 'ERROR';
+    return this.data?.['state'] === 'ERROR';
   }
 
   public get isRemoteStartEnable() {
-    return this.data.remoteStart === this.deviceModel.lookupMonitorName('remoteStart', '@CP_ON_EN_W');
+    return this.data['remoteStart'] === this.deviceModel.lookupMonitorName('remoteStart', '@CP_ON_EN_W');
   }
 
   public get isDoorLocked() {
-    return this.data.doorLock === this.deviceModel.lookupMonitorName('doorLock', '@CP_ON_EN_W');
+    return this.data['doorLock'] === this.deviceModel.lookupMonitorName('doorLock', '@CP_ON_EN_W');
   }
 
   public get remainDuration() {
-    const remainTimeHour = this.data?.remainTimeHour || 0,
-      remainTimeMinute = this.data?.remainTimeMinute || 0;
+    const remainTimeHour = this.data?.['remainTimeHour'] || 0,
+      remainTimeMinute = this.data?.['remainTimeMinute'] || 0;
 
     let remainingDuration = 0;
     if (this.isRunning) {
@@ -216,6 +219,6 @@ export class WasherDryerStatus {
   }
 
   public get TCLCount() {
-    return Math.min(parseInt(this.data?.TCLCount || 0), 30);
+    return Math.min(parseInt(this.data?.['TCLCount'] || 0), 30);
   }
 }

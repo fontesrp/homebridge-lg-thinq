@@ -1,6 +1,6 @@
-import {LGThinQHomebridgePlatform} from './platform';
-import {PlatformAccessory} from 'homebridge';
-import {Device} from './lib/Device';
+import type {LGThinQHomebridgePlatform} from './platform';
+import type {PlatformAccessory} from 'homebridge';
+import type {Device} from './lib/Device';
 import {EventEmitter} from 'events';
 import {mergeDeep} from './helper';
 
@@ -11,7 +11,7 @@ export class baseDevice extends EventEmitter {
   ) {
     super();
 
-    const device = accessory.context.device;
+    const device = accessory.context['device'];
     const {AccessoryInformation} = this.platform.Service;
     const serviceAccessoryInformation = accessory.getService(AccessoryInformation) || accessory.addService(AccessoryInformation);
 
@@ -23,18 +23,18 @@ export class baseDevice extends EventEmitter {
   }
 
   public updateAccessoryCharacteristic(device: Device) {
-    this.accessory.context.device = device;
+    this.accessory.context['device'] = device;
   }
 
   public update(snapshot) {
-    const device: Device = this.accessory.context.device;
+    const device: Device = this.accessory.context['device'];
     this.platform.log.debug('['+device.name+'] Received snapshot: ', JSON.stringify(snapshot));
     device.data.snapshot = mergeDeep({}, device.snapshot, snapshot);
     this.updateAccessoryCharacteristic(device);
   }
 
   public get config() {
-    return this.platform.config.devices.find(enabled => enabled.id === this.accessory.context.device.id) || {};
+    return this.platform.config['devices'].find(enabled => enabled.id === this.accessory.context['device'].id) || {};
   }
 
   public static model() {

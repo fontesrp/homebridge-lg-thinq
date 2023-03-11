@@ -1,8 +1,8 @@
-import {LGThinQHomebridgePlatform} from '../platform';
-import {CharacteristicValue, PlatformAccessory} from 'homebridge';
-import {Device} from '../lib/Device';
+import type {LGThinQHomebridgePlatform} from '../platform';
+import type {CharacteristicValue, PlatformAccessory} from 'homebridge';
+import type {Device} from '../lib/Device';
 import {baseDevice} from '../baseDevice';
-import {DeviceModel} from '../lib/DeviceModel';
+import type {DeviceModel} from '../lib/DeviceModel';
 import {cToF, fToC} from '../helper';
 
 export default class Refrigerator extends baseDevice {
@@ -14,8 +14,8 @@ export default class Refrigerator extends baseDevice {
   protected serviceEcoFriendly;
 
   constructor(
-    protected readonly platform: LGThinQHomebridgePlatform,
-    protected readonly accessory: PlatformAccessory,
+    protected override readonly platform: LGThinQHomebridgePlatform,
+    protected override readonly accessory: PlatformAccessory,
   ) {
     super(platform, accessory);
 
@@ -27,7 +27,7 @@ export default class Refrigerator extends baseDevice {
       },
       Characteristic,
     } = this.platform;
-    const device: Device = accessory.context.device;
+    const device: Device = accessory.context['device'];
 
     const serviceLabel = accessory.getService(ServiceLabel);
     if (serviceLabel) {
@@ -48,7 +48,7 @@ export default class Refrigerator extends baseDevice {
     this.serviceDoorOpened = accessory.getService(ContactSensor) || accessory.addService(ContactSensor, 'Refrigerator Door Closed');
 
     this.serviceExpressMode = accessory.getService('Express Freezer');
-    if (this.config.ref_express_freezer && 'expressMode' in device.snapshot?.refState) {
+    if (this.config.ref_express_freezer && 'expressMode' in (device.snapshot?.refState || {})) {
       this.serviceExpressMode = this.serviceExpressMode || accessory.addService(Switch, 'Express Freezer', 'Express Freezer');
       this.serviceExpressMode.getCharacteristic(Characteristic.On).onSet(this.setExpressMode.bind(this));
     } else if (this.serviceExpressMode) {
@@ -57,7 +57,7 @@ export default class Refrigerator extends baseDevice {
     }
 
     this.serviceExpressFridge = accessory.getService('Express Fridge');
-    if (this.config.ref_express_fridge && 'expressFridge' in device.snapshot?.refState) {
+    if (this.config.ref_express_fridge && 'expressFridge' in (device.snapshot?.refState || {})) {
       // eslint-disable-next-line max-len
       this.serviceExpressFridge = this.serviceExpressFridge || accessory.addService(Switch, 'Express Fridge', 'Express Fridge');
       this.serviceExpressFridge.getCharacteristic(Characteristic.On).onSet(this.setExpressFridge.bind(this));
@@ -67,7 +67,7 @@ export default class Refrigerator extends baseDevice {
     }
 
     this.serviceEcoFriendly = accessory.getService('Eco Friendly');
-    if (this.config.ref_eco_friendly && 'ecoFriendly' in device.snapshot?.refState) {
+    if (this.config.ref_eco_friendly && 'ecoFriendly' in (device.snapshot?.refState || {})) {
       this.serviceEcoFriendly = this.serviceEcoFriendly || accessory.addService(Switch, 'Eco Friendly', 'Eco Friendly');
       this.serviceEcoFriendly.getCharacteristic(Characteristic.On).onSet(this.setEcoFriendly.bind(this));
     } else if (this.serviceEcoFriendly) {
@@ -76,7 +76,7 @@ export default class Refrigerator extends baseDevice {
     }
   }
 
-  public get config() {
+  public override get config() {
     return Object.assign({}, {
       ref_express_freezer: false,
       ref_express_fridge: false,
@@ -85,13 +85,13 @@ export default class Refrigerator extends baseDevice {
   }
 
   public get Status() {
-    return new RefrigeratorStatus(this.accessory.context.device.snapshot?.refState, this.accessory.context.device.deviceModel);
+    return new RefrigeratorStatus(this.accessory.context['device'].snapshot?.refState, this.accessory.context['device'].deviceModel);
   }
 
   /**
    * update accessory characteristic by device
    */
-  public updateAccessoryCharacteristic(device: Device) {
+  public override updateAccessoryCharacteristic(device: Device) {
     super.updateAccessoryCharacteristic(device);
 
     const {Characteristic} = this.platform;
@@ -118,21 +118,21 @@ export default class Refrigerator extends baseDevice {
       this.serviceDoorOpened.updateCharacteristic(Characteristic.ContactSensorState, contactSensorValue);
     }
 
-    if (this.config.ref_express_freezer && 'expressMode' in device.snapshot?.refState && this.serviceExpressMode) {
+    if (this.config.ref_express_freezer && 'expressMode' in (device.snapshot?.refState || {}) && this.serviceExpressMode) {
       this.serviceExpressMode.updateCharacteristic(Characteristic.On, this.Status.isExpressModeOn);
     }
 
-    if (this.config.ref_express_fridge && 'expressFridge' in device.snapshot?.refState && this.serviceExpressFridge) {
+    if (this.config.ref_express_fridge && 'expressFridge' in (device.snapshot?.refState || {}) && this.serviceExpressFridge) {
       this.serviceExpressFridge.updateCharacteristic(Characteristic.On, this.Status.isExpressFridgeOn);
     }
 
-    if (this.config.ref_eco_friendly && 'ecoFriendly' in device.snapshot?.refState && this.serviceEcoFriendly) {
+    if (this.config.ref_eco_friendly && 'ecoFriendly' in (device.snapshot?.refState || {}) && this.serviceEcoFriendly) {
       this.serviceEcoFriendly.updateCharacteristic(Characteristic.On, this.Status.isEcoFriendlyOn);
     }
   }
 
   async setExpressMode(value: CharacteristicValue) {
-    const device: Device = this.accessory.context.device;
+    const device: Device = this.accessory.context['device'];
     const On = device.deviceModel.lookupMonitorName('expressMode', '@CP_ON_EN_W');
     const Off = device.deviceModel.lookupMonitorName('expressMode', '@CP_OFF_EN_W');
     this.platform.ThinQ?.deviceControl(device.id, {
@@ -150,7 +150,7 @@ export default class Refrigerator extends baseDevice {
   }
 
   async setExpressFridge(value: CharacteristicValue) {
-    const device: Device = this.accessory.context.device;
+    const device: Device = this.accessory.context['device'];
     const On = device.deviceModel.lookupMonitorName('expressFridge', '@CP_ON_EN_W');
     const Off = device.deviceModel.lookupMonitorName('expressFridge', '@CP_OFF_EN_W');
     this.platform.ThinQ?.deviceControl(device.id, {
@@ -168,7 +168,7 @@ export default class Refrigerator extends baseDevice {
   }
 
   async setEcoFriendly(value: CharacteristicValue) {
-    const device: Device = this.accessory.context.device;
+    const device: Device = this.accessory.context['device'];
     const On = device.deviceModel.lookupMonitorName('ecoFriendly', '@CP_ON_EN_W');
     const Off = device.deviceModel.lookupMonitorName('ecoFriendly', '@CP_OFF_EN_W');
     this.platform.ThinQ?.deviceControl(device.id, {
@@ -198,8 +198,8 @@ export default class Refrigerator extends baseDevice {
    * create a thermostat service
    */
   protected createThermostat(name: string, key: string) {
-    const device: Device = this.accessory.context.device;
-    const visibleItem = device.deviceModel.data.Config?.visibleItems?.find(item => item.Feature === key || item.feature === key);
+    const device: Device = this.accessory.context['device'];
+    const visibleItem = device.deviceModel.data['Config']?.visibleItems?.find(item => item.Feature === key || item.feature === key);
     if (visibleItem && (visibleItem.ControlTitle === undefined && visibleItem.controlTitle === undefined)) {
       return;
     }
@@ -258,7 +258,7 @@ export default class Refrigerator extends baseDevice {
   }
 
   async setTemperature(key: string, temp: string) {
-    const device: Device = this.accessory.context.device;
+    const device: Device = this.accessory.context['device'];
     await this.platform.ThinQ?.deviceControl(device.id, {
       dataKey: null,
       dataValue: null,
@@ -274,42 +274,42 @@ export default class Refrigerator extends baseDevice {
 }
 
 export class RefrigeratorStatus {
-  constructor(protected data, protected deviceModel: DeviceModel) {
+  constructor(protected data: Record<string, any>, protected deviceModel: DeviceModel) {
   }
 
   public get freezerTemperature() {
     if (this.tempUnit === 'FAHRENHEIT') {
-      return fToC(parseInt(this.deviceModel.lookupMonitorValue('freezerTemp_F', this.data?.freezerTemp, '0')));
+      return fToC(parseInt(this.deviceModel.lookupMonitorValue('freezerTemp_F', this.data?.['freezerTemp'], '0')));
     }
 
-    return parseInt(this.deviceModel.lookupMonitorValue('freezerTemp_C', this.data?.freezerTemp, '0'));
+    return parseInt(this.deviceModel.lookupMonitorValue('freezerTemp_C', this.data?.['freezerTemp'], '0'));
   }
 
   public get fridgeTemperature() {
     if (this.tempUnit === 'FAHRENHEIT') {
-      return fToC(parseInt(this.deviceModel.lookupMonitorValue( 'fridgeTemp_F', this.data?.fridgeTemp, '0')));
+      return fToC(parseInt(this.deviceModel.lookupMonitorValue( 'fridgeTemp_F', this.data?.['fridgeTemp'], '0')));
     }
 
-    return parseInt(this.deviceModel.lookupMonitorValue('fridgeTemp_C', this.data?.fridgeTemp, '0'));
+    return parseInt(this.deviceModel.lookupMonitorValue('fridgeTemp_C', this.data?.['fridgeTemp'], '0'));
   }
 
   public get isDoorClosed() {
-    return this.data?.atLeastOneDoorOpen === 'CLOSE';
+    return this.data?.['atLeastOneDoorOpen'] === 'CLOSE';
   }
 
   public get isExpressModeOn() {
-    return this.data?.expressMode === this.deviceModel.lookupMonitorName('expressMode', '@CP_ON_EN_W');
+    return this.data?.['expressMode'] === this.deviceModel.lookupMonitorName('expressMode', '@CP_ON_EN_W');
   }
 
   public get isExpressFridgeOn() {
-    return this.data?.expressFridge === this.deviceModel.lookupMonitorName('expressFridge', '@CP_ON_EN_W');
+    return this.data?.['expressFridge'] === this.deviceModel.lookupMonitorName('expressFridge', '@CP_ON_EN_W');
   }
 
   public get isEcoFriendlyOn() {
-    return this.data?.ecoFriendly === this.deviceModel.lookupMonitorName('ecoFriendly', '@CP_ON_EN_W');
+    return this.data?.['ecoFriendly'] === this.deviceModel.lookupMonitorName('ecoFriendly', '@CP_ON_EN_W');
   }
 
   public get tempUnit() {
-    return this.data?.tempUnit || 'CELSIUS';
+    return this.data?.['tempUnit'] || 'CELSIUS';
   }
 }

@@ -1,6 +1,6 @@
-import {LGThinQHomebridgePlatform} from '../platform';
-import {CharacteristicValue, PlatformAccessory} from 'homebridge';
-import {Device} from '../lib/Device';
+import type {LGThinQHomebridgePlatform} from '../platform';
+import type {CharacteristicValue, PlatformAccessory, Service} from 'homebridge';
+import type {Device} from '../lib/Device';
 import {baseDevice} from '../baseDevice';
 
 export enum RotateSpeed {
@@ -12,15 +12,15 @@ export enum RotateSpeed {
 
 // opMode = 14 => normal mode, can rotate speed
 export default class AirPurifier extends baseDevice {
-  protected serviceAirPurifier;
-  protected serviceAirQuality;
-  protected serviceLight;
-  protected serviceFilterMaintenance;
-  protected serviceAirFastMode;
+  protected serviceAirPurifier: Service;
+  protected serviceAirQuality: Service;
+  protected serviceLight: Service;
+  protected serviceFilterMaintenance?: Service;
+  protected serviceAirFastMode: Service | null | undefined;
 
   constructor(
-    protected readonly platform: LGThinQHomebridgePlatform,
-    protected readonly accessory: PlatformAccessory,
+    protected override readonly platform: LGThinQHomebridgePlatform,
+    protected override readonly accessory: PlatformAccessory,
   ) {
     super(platform, accessory);
 
@@ -35,7 +35,7 @@ export default class AirPurifier extends baseDevice {
       Characteristic,
     } = this.platform;
 
-    const device: Device = accessory.context.device;
+    const device: Device = accessory.context['device'];
 
     // get the service if it exists, otherwise create a new service
     // you can create multiple services for each accessory
@@ -85,10 +85,10 @@ export default class AirPurifier extends baseDevice {
   }
 
   public get Status() {
-    return new AirPurifierStatus(this.accessory.context.device.snapshot);
+    return new AirPurifierStatus(this.accessory.context['device'].snapshot);
   }
 
-  public get config() {
+  public override get config() {
     return Object.assign({}, {
       air_fast_mode: false,
     }, super.config);
@@ -99,7 +99,7 @@ export default class AirPurifier extends baseDevice {
       return;
     }
 
-    const device: Device = this.accessory.context.device;
+    const device: Device = this.accessory.context['device'];
     const isOn = value as boolean ? 1 : 0;
     this.platform.ThinQ?.deviceControl(device.id, {
       dataKey: 'airState.miscFuncState.airFast',
@@ -111,7 +111,7 @@ export default class AirPurifier extends baseDevice {
   }
 
   async setActive(value: CharacteristicValue) {
-    const device: Device = this.accessory.context.device;
+    const device: Device = this.accessory.context['device'];
     const isOn = value as boolean ? 1 : 0;
     if (this.Status.isPowerOn && isOn) {
       return; // don't send same status
@@ -128,7 +128,7 @@ export default class AirPurifier extends baseDevice {
   }
 
   async setTargetAirPurifierState(value: CharacteristicValue) {
-    const device: Device = this.accessory.context.device;
+    const device: Device = this.accessory.context['device'];
     if (!this.Status.isPowerOn || (!!value !== this.Status.isNormalMode)) {
       return; // just skip it
     }
@@ -146,9 +146,9 @@ export default class AirPurifier extends baseDevice {
     }
 
     this.platform.log.debug('Set Rotation Speed ->', value);
-    const device: Device = this.accessory.context.device;
+    const device: Device = this.accessory.context['device'];
     const values = Object.keys(RotateSpeed);
-    const windStrength = parseInt(values[Math.round((value as number)) - 1]) || RotateSpeed.EXTRA;
+    const windStrength = parseInt(values[Math.round((value as number)) - 1] || '0') || RotateSpeed.EXTRA;
     this.platform.ThinQ?.deviceControl(device.id, {
       dataKey: 'airState.windStrength',
       dataValue: windStrength,
@@ -163,7 +163,7 @@ export default class AirPurifier extends baseDevice {
       return;
     }
 
-    const device: Device = this.accessory.context.device;
+    const device: Device = this.accessory.context['device'];
     const isSwing = value as boolean ? 1 : 0;
     this.platform.ThinQ?.deviceControl(device.id, {
       dataKey: 'airState.circulate.rotate',
@@ -179,7 +179,7 @@ export default class AirPurifier extends baseDevice {
       return;
     }
 
-    const device: Device = this.accessory.context.device;
+    const device: Device = this.accessory.context['device'];
     const isLightOn = value as boolean ? 1 : 0;
     this.platform.ThinQ?.deviceControl(device.id, {
       dataKey: 'airState.lightingState.signal',
@@ -190,7 +190,7 @@ export default class AirPurifier extends baseDevice {
     });
   }
 
-  public updateAccessoryCharacteristic(device: Device) {
+  public override updateAccessoryCharacteristic(device: Device) {
     super.updateAccessoryCharacteristic(device);
     const {
       Characteristic,

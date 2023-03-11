@@ -1,6 +1,6 @@
-import {Device} from '../lib/Device';
+import type {Device} from '../lib/Device';
 import {PlatformType} from '../lib/constants';
-import {DeviceModel} from '../lib/DeviceModel';
+import type {DeviceModel} from '../lib/DeviceModel';
 import AirState from './transforms/AirState';
 import WasherDryer from './transforms/WasherDryer';
 import {Washer, AC, Refrigerator, AirPurifier, RangeHood} from './devices';
@@ -76,8 +76,8 @@ export default class Helper {
       workId: uuid.v4(),
     };
 
-    if (device.deviceModel.data.ControlWifi?.type === 'BINARY(BYTE)') {
-      const sampleData = device.deviceModel.data.ControlWifi?.action?.SetControl?.data || '[]';
+    if (device.deviceModel.data['ControlWifi']?.type === 'BINARY(BYTE)') {
+      const sampleData = device.deviceModel.data['ControlWifi']?.action?.SetControl?.data || '[]';
       const decodedMonitor = device.snapshot.raw || {};
       decodedMonitor[key] = value;
       // build data array of byte
@@ -100,7 +100,7 @@ export default class Helper {
   }
 }
 
-export function lookupEnumIndex(enumType, value) {
+export function lookupEnumIndex(enumType: { [s: string]: unknown } | ArrayLike<unknown>, value: any) {
   return Object.keys(enumType)[Object.values(enumType).indexOf(<any> value)];
 }
 

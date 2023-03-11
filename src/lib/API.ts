@@ -6,7 +6,7 @@ import {Gateway} from './Gateway';
 
 import {requestClient} from './request';
 import {Auth} from './Auth';
-import {WorkId} from './ThinQ';
+import type {WorkId} from './ThinQ';
 import {ManualProcessNeeded, MonitorError, NotConnectedError, TokenExpiredError} from '../errors';
 import crypto from 'crypto';
 import axios from 'axios';
@@ -40,11 +40,11 @@ export class API {
     this.logger = console;
   }
 
-  async getRequest(uri, headers?: any) {
+  async getRequest(uri: string, headers?: any) {
     return await this.request('get', uri, headers);
   }
 
-  async postRequest(uri, data, headers?: any) {
+  async postRequest(uri: string, data: Record<string, any>, headers?: any) {
     return await this.request('post', uri, data, headers);
   }
 

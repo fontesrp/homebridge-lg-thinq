@@ -1,20 +1,20 @@
 import {baseDevice} from '../baseDevice';
-import {LGThinQHomebridgePlatform} from '../platform';
-import {CharacteristicValue, PlatformAccessory} from 'homebridge';
-import {Device} from '../lib/Device';
+import type {LGThinQHomebridgePlatform} from '../platform';
+import type {CharacteristicValue, PlatformAccessory, Service} from 'homebridge';
+import type {Device} from '../lib/Device';
 import {ValueType} from '../lib/DeviceModel';
 
 export default class RangeHood extends baseDevice {
-  protected serviceHood;
-  protected serviceLight;
+  protected serviceHood: Service;
+  protected serviceLight: Service;
 
   constructor(
-    protected readonly platform: LGThinQHomebridgePlatform,
-    protected readonly accessory: PlatformAccessory,
+    protected override readonly platform: LGThinQHomebridgePlatform,
+    protected override readonly accessory: PlatformAccessory,
   ) {
     super(platform, accessory);
 
-    const device: Device = this.accessory.context.device;
+    const device: Device = this.accessory.context['device'];
 
     const {
       Service: {
@@ -67,7 +67,7 @@ export default class RangeHood extends baseDevice {
   }
 
   async setHoodRotationSpeed(value: CharacteristicValue) {
-    const device: Device = this.accessory.context.device;
+    const device: Device = this.accessory.context['device'];
     this.platform.ThinQ?.deviceControl(device, {
       dataKey: null,
       dataValue: null,
@@ -85,7 +85,7 @@ export default class RangeHood extends baseDevice {
   }
 
   async setLightBrightness(value: CharacteristicValue) {
-    const device: Device = this.accessory.context.device;
+    const device: Device = this.accessory.context['device'];
     this.platform.ThinQ?.deviceControl(device, {
       dataKey: null,
       dataValue: null,
@@ -98,7 +98,7 @@ export default class RangeHood extends baseDevice {
     });
   }
 
-  public updateAccessoryCharacteristic(device: Device) {
+  public override updateAccessoryCharacteristic(device: Device) {
     super.updateAccessoryCharacteristic(device);
 
     const hoodState = device.snapshot.hoodState;

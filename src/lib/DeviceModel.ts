@@ -81,9 +81,9 @@ export class DeviceModel {
 
   public value(name: string) {
     let data = this.data.Value[name];
-    if (data === undefined && this.data.Monitoring?.type === 'THINQ2') {
+    if (data === undefined && this.data['Monitoring']?.type === 'THINQ2') {
       // convert key to thinq2 monitoring value
-      const protocol = this.data.Monitoring?.protocol;
+      const protocol = this.data['Monitoring']?.protocol;
 
       /**
        * sample: "protocol": {
@@ -122,58 +122,58 @@ export class DeviceModel {
        * 			"tclCount": "TclCount"
        * 		}
        */
-      if (protocol.constructor.name === 'Object' && protocol[name] !== undefined) {
-        data = this.data.Value[this.data.Monitoring?.protocol[name]];
-      }
+
       /**
        * sample: "protocol": [{
-       * 				"_comment": "Hood Operation State(1byte)",
-       * 				"superSet": "hoodState.hoodState",
-       * 				"value": "HoodState"
-       * 			},
+       *        "_comment": "Hood Operation State(1byte)",
+       *        "superSet": "hoodState.hoodState",
+       *        "value": "HoodState"
+       *      },
        *      {
-       * 				"_comment": "VentState",
-       * 				"superSet": "hoodState.ventLevel",
-       * 				"value": "VentLevel"
-       * 			},
+       *        "_comment": "VentState",
+       *        "superSet": "hoodState.ventLevel",
+       *        "value": "VentLevel"
+       *      },
        *      {
-       * 				"_comment": "VentMode",
-       * 				"superSet": "hoodState.ventMode",
-       * 				"value": "VentMode"
-       * 			},
+       *        "_comment": "VentMode",
+       *        "superSet": "hoodState.ventMode",
+       *        "value": "VentMode"
+       *      },
        *      {
-       * 				"_comment": "TimerMin",
-       * 				"superSet": "hoodState.remainTimeMinute",
-       * 				"value": "TimerMin"
-       * 			},
+       *        "_comment": "TimerMin",
+       *        "superSet": "hoodState.remainTimeMinute",
+       *        "value": "TimerMin"
+       *      },
        *      {
-       * 				"_comment": "TimerSec",
-       * 				"superSet": "hoodState.remainTimeSecond",
-       * 				"value": "TimerSec"
-       * 			},
+       *        "_comment": "TimerSec",
+       *        "superSet": "hoodState.remainTimeSecond",
+       *        "value": "TimerSec"
+       *      },
        *      {
-       * 				"_comment": "LightState",
-       * 				"superSet": "hoodState.lampLevel",
-       * 				"value": "LampLevel"
-       * 			},
+       *        "_comment": "LightState",
+       *        "superSet": "hoodState.lampLevel",
+       *        "value": "LampLevel"
+       *      },
        *      {
-       * 				"_comment": "Dummy-meaningless",
-       * 				"superSet": "hoodState.dummyData",
-       * 				"value": "Dummy"
-       * 			},
+       *        "_comment": "Dummy-meaningless",
+       *        "superSet": "hoodState.dummyData",
+       *        "value": "Dummy"
+       *      },
        *      {
-       * 				"_comment": "HoodStateInfo",
-       * 				"superSet": null,
-       * 				"value": "HoodStateInfo"
-       * 			},
+       *        "_comment": "HoodStateInfo",
+       *        "superSet": null,
+       *        "value": "HoodStateInfo"
+       *      },
        *      {
-       * 				"_comment": "WiFi Access Enable",
-       * 				"superSet": null,
-       * 				"value": "WiFiAccess"
-       * 			}
+       *        "_comment": "WiFi Access Enable",
+       *        "superSet": null,
+       *        "value": "WiFiAccess"
+       *      }
        *    ]
        */
-      else if (protocol.constructor.name === 'Array' && protocol.find(p => p.superSet === name) !== undefined) {
+      if (protocol.constructor.name === 'Object' && protocol[name] !== undefined) {
+        data = this.data.Value[this.data['Monitoring']?.protocol[name]];
+      } else if (protocol.constructor.name === 'Array' && protocol.find(p => p.superSet === name) !== undefined) {
         data = this.data.Value[protocol.find(p => p.superSet === name).value];
       }
     }
@@ -182,24 +182,24 @@ export class DeviceModel {
       return null;
     }
 
-    const type = data.type || data.data_type;
+    const type = data.type || data['data_type'];
     switch (type.toLowerCase()) {
       case 'enum':
         return {
           type: ValueType.Enum,
-          options: data.option || data.value_mapping,
+          options: data['option'] || data['value_mapping'],
         } as EnumValue;
 
       case 'range':
         return {
           type: ValueType.Range,
-          min: (data.option || data.value_validation)?.min,
-          max: (data.option || data.value_validation)?.max,
-          step: (data.option || data.value_validation)?.step || 1,
+          min: (data['option'] || data['value_validation'])?.min,
+          max: (data['option'] || data['value_validation'])?.max,
+          step: (data['option'] || data['value_validation'])?.step || 1,
         } as RangeValue;
 
       case 'bit': {
-        const bitValues = Object.values(data.option).reduce((obj: any, value) => ({
+        const bitValues = Object.values(data['option']).reduce((obj: any, value) => ({
           ...obj,
           [(value as any).startbit]: (value as any).values,
         }), {});
@@ -207,13 +207,13 @@ export class DeviceModel {
       }
 
       case 'reference': {
-        const [ref] = data.option;
+        const [ref] = data['option'];
         return { type: ValueType.Reference, reference: this.data[ref] } as ReferenceValue;
       }
 
       case 'string':
-        if (typeof data._comment === 'string') {
-          return { type: ValueType.StringComment, comment: data._comment } as StringCommentValue;
+        if (typeof data['_comment'] === 'string') {
+          return { type: ValueType.StringComment, comment: data['_comment'] } as StringCommentValue;
         }
         return null;
 
@@ -223,7 +223,7 @@ export class DeviceModel {
   }
 
   public default(name: string) {
-    return this.data.Value[name].default;
+    return this.data.Value[name]?.['default'];
   }
 
   public enumValue(key: string, name: string) {
@@ -266,7 +266,7 @@ export class DeviceModel {
       return null;
     }
 
-    return this.monitoringValue[key].valueMapping || null;
+    return this.monitoringValue[key]?.valueMapping || null;
   }
 
   public lookupMonitorValue(key: string, name: string, default_value: null | string = null) {
@@ -294,13 +294,13 @@ export class DeviceModel {
       return Object.keys(obj).find(key => obj[key].label === value);
     }
 
-    return getKeyByValue(this.monitoringValue[key].valueMapping, label) || null;
+    return getKeyByValue(this.monitoringValue[key]?.valueMapping, label) || null;
   }
 
   public decodeMonitor(data: any) {
-    if (this.data.Monitoring?.type === 'BINARY(BYTE)') {
+    if (this.data['Monitoring']?.type === 'BINARY(BYTE)') {
       return this.decodeMonitorBinary(data);
-    } else if (this.data.Monitoring?.type === 'BINARY(HEX)') {
+    } else if (this.data['Monitoring']?.type === 'BINARY(HEX)') {
       return this.decodeMonitorBinary(data, 16);
     }
 
@@ -314,7 +314,7 @@ export class DeviceModel {
   private decodeMonitorBinary(data: any, length = 8) {
     const decoded: { [key: string]: any } = {};
 
-    for (const item of this.data.Monitoring.protocol) {
+    for (const item of this.data['Monitoring'].protocol) {
       const key = item.value;
       let value = 0;
 

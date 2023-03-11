@@ -1,7 +1,7 @@
 import AirPurifier from './AirPurifier';
-import {LGThinQHomebridgePlatform} from '../platform';
-import {CharacteristicValue, PlatformAccessory} from 'homebridge';
-import {Device} from '../lib/Device';
+import type {LGThinQHomebridgePlatform} from '../platform';
+import type {CharacteristicValue, PlatformAccessory, Service} from 'homebridge';
+import type {Device} from '../lib/Device';
 
 export enum LightBrightness {
   OFF = 0,
@@ -12,13 +12,13 @@ export enum LightBrightness {
 }
 
 export default class AeroTower extends AirPurifier {
-  protected serviceTemperatureSensor;
-  protected serviceHumiditySensor;
-  protected serviceUVNano;
+  protected serviceTemperatureSensor: Service;
+  protected serviceHumiditySensor: Service;
+  protected serviceUVNano: Service;
 
   constructor(
-    protected readonly platform: LGThinQHomebridgePlatform,
-    protected readonly accessory: PlatformAccessory,
+    protected override readonly platform: LGThinQHomebridgePlatform,
+    protected override readonly accessory: PlatformAccessory,
   ) {
     super(platform, accessory);
 
@@ -47,12 +47,12 @@ export default class AeroTower extends AirPurifier {
     this.serviceUVNano.getCharacteristic(Characteristic.On).onSet(this.setUVMode.bind(this));
   }
 
-  async setLight(value: CharacteristicValue) {
+  override async setLight(value: CharacteristicValue) {
     if (!this.Status.isPowerOn) {
       return;
     }
 
-    const device: Device = this.accessory.context.device;
+    const device: Device = this.accessory.context['device'];
     const isLightOn = value as boolean ? 1 : 0;
     this.platform.ThinQ?.deviceControl(device.id, {
       dataKey: 'airState.lightingState.displayControl',
@@ -65,12 +65,12 @@ export default class AeroTower extends AirPurifier {
 
   protected setUVMode(value: CharacteristicValue) {
     const uvModeValue = value ? 1 : 0;
-    this.platform.ThinQ?.deviceControl(this.accessory.context.device, {
+    this.platform.ThinQ?.deviceControl(this.accessory.context['device'], {
       dataKey: 'airState.miscFuncState.Uvnano',
       dataValue: uvModeValue,
     }).then(() => {
-      this.accessory.context.device.data.snapshot['airState.miscFuncState.Uvnano'] = uvModeValue;
-      this.updateAccessoryCharacteristic(this.accessory.context.device);
+      this.accessory.context['device'].data.snapshot['airState.miscFuncState.Uvnano'] = uvModeValue;
+      this.updateAccessoryCharacteristic(this.accessory.context['device']);
     });
   }
 
@@ -79,17 +79,17 @@ export default class AeroTower extends AirPurifier {
     const values = [LightBrightness.LEVEL_1, LightBrightness.LEVEL_2, LightBrightness.LEVEL_3];
 
     if (typeof values[brightnessValue] !== 'undefined') {
-      this.platform.ThinQ?.deviceControl(this.accessory.context.device, {
+      this.platform.ThinQ?.deviceControl(this.accessory.context['device'], {
         dataKey: 'airState.lightingState.displayControl',
         dataValue: values[brightnessValue],
       }).then(() => {
-        this.accessory.context.device.data.snapshot['airState.lightingState.displayControl'] = values[brightnessValue];
-        this.updateAccessoryCharacteristic(this.accessory.context.device);
+        this.accessory.context['device'].data.snapshot['airState.lightingState.displayControl'] = values[brightnessValue];
+        this.updateAccessoryCharacteristic(this.accessory.context['device']);
       });
     }
   }
 
-  public updateAccessoryCharacteristic(device: Device) {
+  public override updateAccessoryCharacteristic(device: Device) {
     super.updateAccessoryCharacteristic(device);
 
     const {

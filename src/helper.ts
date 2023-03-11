@@ -1,5 +1,5 @@
 import { Categories } from 'homebridge';
-import {Device} from './lib/Device';
+import type {Device} from './lib/Device';
 import AirPurifier from './devices/AirPurifier';
 import Refrigerator from './devices/Refrigerator';
 import WasherDryer from './devices/WasherDryer';
@@ -56,11 +56,11 @@ export class Helper {
   }
 }
 
-export function isObject(item) {
+export function isObject(item: any) {
   return (item && typeof item === 'object' && !Array.isArray(item));
 }
 
-export function mergeDeep(target, ...sources) {
+export function mergeDeep(target: any, ...sources: any[]) {
   if (!sources.length) {
     return target;
   }
@@ -82,10 +82,10 @@ export function mergeDeep(target, ...sources) {
   return mergeDeep(target, ...sources);
 }
 
-export function fToC(fahrenheit) {
+export function fToC(fahrenheit: number) {
   return parseFloat(((fahrenheit - 32) * 5 / 9).toFixed(1));
 }
 
-export function cToF(celsius) {
+export function cToF(celsius: number) {
   return Math.round(celsius * 9 / 5 + 32);
 }

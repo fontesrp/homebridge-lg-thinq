@@ -1,6 +1,6 @@
-import {Logger, PlatformConfig} from 'homebridge';
+import type {Logger, PlatformConfig} from 'homebridge';
 import {API} from './API';
-import {LGThinQHomebridgePlatform} from '../platform';
+import type {LGThinQHomebridgePlatform} from '../platform';
 import {Device} from './Device';
 import {PlatformType} from './constants';
 import * as uuid from 'uuid';
@@ -20,13 +20,13 @@ export class ThinQ {
   protected api: API;
   protected workIds: Record<string, WorkId> = {};
   protected deviceModel: Record<string, DeviceModel> = {};
-  protected persist;
+  protected persist: Persist;
   constructor(
     public readonly platform: LGThinQHomebridgePlatform,
     public readonly config: PlatformConfig,
     public readonly log: Logger,
   ) {
-    this.api = new API(this.config.country, this.config.language);
+    this.api = new API(this.config['country'], this.config['language']);
     this.api.logger = log;
     this.api.httpClient.interceptors.response.use(response => {
       this.log.debug('[request]', response.config.method, response.config.url);
@@ -35,10 +35,10 @@ export class ThinQ {
       return Promise.reject(err);
     });
 
-    if (config.refresh_token) {
-      this.api.setRefreshToken(config.refresh_token);
-    } else if (config.username && config.password) {
-      this.api.setUsernamePassword(config.username, config.password);
+    if (config['refresh_token']) {
+      this.api.setRefreshToken(config['refresh_token']);
+    } else if (config['username'] && config['password']) {
+      this.api.setUsernamePassword(config['username'], config['password']);
     }
 
     this.persist = new Persist(Path.join(this.platform.api.user.storagePath(), PLUGIN_NAME, 'persist', 'devices'));
@@ -49,14 +49,14 @@ export class ThinQ {
       return [];
     });
 
-    return listDevices.map(dev => new Device(dev));
+    return listDevices.map((dev: any) => new Device(dev));
   }
 
   public async setup(device: Device) {
     // load device model
     device.deviceModel = await this.loadDeviceModel(device);
 
-    if (device.deviceModel.data.Monitoring === undefined
+    if (device.deviceModel.data['Monitoring'] === undefined
       && device.deviceModel.data.MonitoringValue === undefined
       && device.deviceModel.data.Value === undefined) {
       this.log.warn('['+device.name+'] This device may not "smart" device. Ignore it!');
@@ -86,7 +86,7 @@ export class ThinQ {
     }
   }
 
-  protected async registerWorkId(device) {
+  protected async registerWorkId(device: Device) {
     return this.workIds[device.id] = await this.api.sendMonitorCommand(device.id, 'Start', uuid.v4()).then(data => {
       if (data !== undefined && 'workId' in data) {
         return data.workId;
@@ -150,24 +150,28 @@ export class ThinQ {
     return device;
   }
 
-  public thinq1DeviceControl(device: Device, key: string, value: any) {
+  public async thinq1DeviceControl(device: Device, key: string, value: any) {
     const data = Helper.prepareControlData(device, key, value);
 
-    return this.api.thinq1PostRequest('rti/rtiControl', data).catch(err => {
+    try {
+      return await this.api.thinq1PostRequest('rti/rtiControl', data);
+    } catch (err) {
       this.log.error('Unknown Error: ', err);
-    });
+    }
   }
 
-  public deviceControl(device: string | Device, values: Record<string, any>, command: 'Set' | 'Operation' = 'Set', ctrlKey = 'basicCtrl') {
+  public async deviceControl(device: string | Device, values: Record<string, any>, command: 'Set' | 'Operation' = 'Set', ctrlKey = 'basicCtrl') {
     const id = device instanceof Device ? device.id : device;
-    return this.api.sendCommandToDevice(id, values, command, ctrlKey).catch(err => {
+    try {
+      return await this.api.sendCommandToDevice(id, values, command, ctrlKey);
+    } catch (err: any) {
       // submitted same value
-      if (err.response?.data?.resultCode === '0103') {
+      if (err?.response?.data?.resultCode === '0103') {
         return false;
       }
 
       this.log.error('Unknown Error: ', err.response);
-    });
+    }
   }
 
   public async registerMQTTListener(callback: (data: any) => void) {
@@ -262,7 +266,7 @@ export class ThinQ {
       this.log.debug('open mqtt connection to', route.mqttServer);
       const device = awsIotDevice(connectData);
 
-      device.on('error', (err) => {
+      device.on('error', (err: any) => {
         this.log.error('mqtt err:', err);
       });
       device.on('connect', () => {
@@ -272,7 +276,7 @@ export class ThinQ {
           device.subscribe(subscription);
         }
       });
-      device.on('message', (topic, payload) => {
+      device.on('message', (_topic: any, payload: { toString: () => string }) => {
         callback(JSON.parse(payload.toString()));
         this.log.debug('mqtt message received:', payload.toString());
       });

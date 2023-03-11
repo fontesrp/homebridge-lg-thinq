@@ -1,20 +1,25 @@
 import {default as AirConditioner, FanSpeed} from '../../devices/AirConditioner';
-import {CharacteristicValue} from 'homebridge';
+import type {CharacteristicValue} from 'homebridge';
 import {ACOperation} from '../transforms/AirState';
-import {Device} from '../../lib/Device';
-import {RangeValue} from '../../lib/DeviceModel';
+import type {Device} from '../../lib/Device';
+import type {RangeValue} from '../../lib/DeviceModel';
 
 export default class AC extends AirConditioner {
 
-  protected createHeaterCoolerService() {
+  protected override createHeaterCoolerService() {
     const {
       Characteristic,
     } = this.platform;
-    const device: Device = this.accessory.context.device;
+    const device: Device = this.accessory.context['device'];
 
     super.createHeaterCoolerService();
 
     const currentTemperatureValue = device.deviceModel.value('TempCur') as RangeValue;
+
+    if (!this.service) {
+      return;
+    }
+
     this.service.getCharacteristic(Characteristic.CurrentTemperature)
       .setProps({
         minValue: currentTemperatureValue.min,
@@ -34,20 +39,20 @@ export default class AC extends AirConditioner {
       });
   }
 
-  async setFanState(value: CharacteristicValue) {
+  override async setFanState(value: CharacteristicValue) {
     if (!this.Status.isPowerOn) {
       return;
     }
 
-    const device: Device = this.accessory.context.device;
+    const device: Device = this.accessory.context['device'];
     const { TargetFanState } = this.platform.Characteristic;
 
     const windStrength = value === TargetFanState.AUTO ? 8 : FanSpeed.HIGH; // 8 mean fan auto mode
     this.platform.ThinQ?.thinq1DeviceControl(device, 'WindStrength', windStrength);
   }
 
-  async setJetModeActive(value: CharacteristicValue) {
-    const device: Device = this.accessory.context.device;
+  override async setJetModeActive(value: CharacteristicValue) {
+    const device: Device = this.accessory.context['device'];
 
     if (this.Status.isPowerOn && this.Status.opMode === 0) {
       const jetModeValue = value ? '1' : '0';
@@ -55,8 +60,8 @@ export default class AC extends AirConditioner {
     }
   }
 
-  async setActive(value: CharacteristicValue) {
-    const device: Device = this.accessory.context.device;
+  override async setActive(value: CharacteristicValue) {
+    const device: Device = this.accessory.context['device'];
     const isOn = value as boolean;
     const op = isOn ? ACOperation.RIGHT_ON : ACOperation.OFF;
     const opValue = device.deviceModel.enumValue('Operation', op);
@@ -64,37 +69,37 @@ export default class AC extends AirConditioner {
     await this.platform.ThinQ?.thinq1DeviceControl(device, 'Operation', opValue);
   }
 
-  async setTargetTemperature(value: CharacteristicValue) {
+  override async setTargetTemperature(value: CharacteristicValue) {
     if (!this.Status.isPowerOn) {
       return;
     }
 
-    const device: Device = this.accessory.context.device;
+    const device: Device = this.accessory.context['device'];
     await this.platform.ThinQ?.thinq1DeviceControl(device, 'TempCfg', value as string);
     device.data.snapshot['airState.tempState.target'] = value as number;
     this.updateAccessoryCharacteristic(device);
   }
 
-  async setFanSpeed(value: CharacteristicValue) {
+  override async setFanSpeed(value: CharacteristicValue) {
     if (!this.Status.isPowerOn) {
       return;
     }
 
     const speedValue = Math.max(1, Math.round(value as number));
-    const device: Device = this.accessory.context.device;
-    const windStrength = parseInt(Object.keys(FanSpeed)[speedValue - 1]) || FanSpeed.HIGH;
+    const device: Device = this.accessory.context['device'];
+    const windStrength = parseInt(Object.keys(FanSpeed)[speedValue - 1] || '0') || FanSpeed.HIGH;
 
     this.platform.ThinQ?.thinq1DeviceControl(device, 'WindStrength', windStrength);
   }
 
-  async setSwingMode(value: CharacteristicValue) {
+  override async setSwingMode(value: CharacteristicValue) {
     if (!this.Status.isPowerOn) {
       return;
     }
 
     const swingValue = !!value as boolean ? '100' : '0';
 
-    const device: Device = this.accessory.context.device;
+    const device: Device = this.accessory.context['device'];
 
     if (this.config.ac_swing_mode === 'BOTH' || this.config.ac_swing_mode === 'VERTICAL') {
       await this.platform.ThinQ?.thinq1DeviceControl(device, 'WDirVStep', swingValue);
@@ -109,16 +114,16 @@ export default class AC extends AirConditioner {
     this.updateAccessoryCharacteristic(device);
   }
 
-  async setOpMode(opMode) {
-    const device: Device = this.accessory.context.device;
+  override async setOpMode(opMode: number) {
+    const device: Device = this.accessory.context['device'];
     await this.platform.ThinQ?.thinq1DeviceControl(device, 'OpMode', opMode);
     device.data.snapshot['airState.opMode'] = opMode;
 
     this.updateAccessoryCharacteristic(device);
   }
 
-  async setLight(value: CharacteristicValue) {
-    const device: Device = this.accessory.context.device;
+  override async setLight(value: CharacteristicValue) {
+    const device: Device = this.accessory.context['device'];
     await this.platform.ThinQ?.thinq1DeviceControl(device, 'DisplayControl', value ? '1' : '0');
   }
 }

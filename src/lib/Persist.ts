@@ -1,7 +1,14 @@
 import * as NodePersist from 'node-persist';
 
+type PersistInterface = {
+  init: () => any;
+  getItem: (arg0: string) => any;
+  setItem: (arg0: string, arg1: string) => any;
+  removeItem: (arg0: string) => any;
+};
+
 export default class Persist {
-  protected persist;
+  protected persist: PersistInterface;
 
   constructor(dir) {
     this.persist = NodePersist.create({
@@ -13,15 +20,15 @@ export default class Persist {
     return await this.persist.init();
   }
 
-  async getItem(key) {
+  async getItem(key: string) {
     return await this.persist.getItem(key);
   }
 
-  async setItem(key, value) {
+  async setItem(key: string, value: string) {
     return await this.persist.setItem(key, value);
   }
 
-  async cacheForever(key, callable) {
+  async cacheForever(key: string, callable: () => any) {
     let value = await this.getItem(key);
     if (!value) {
       value = await callable();
@@ -31,7 +38,7 @@ export default class Persist {
     return value;
   }
 
-  async cache(key, ttl, callable) {
+  async cache(key: string, ttl: number, callable: () => any) {
     let value = await this.getWithExpiry(key);
     if (!value) {
       value = await callable();
@@ -41,7 +48,7 @@ export default class Persist {
     return value;
   }
 
-  async setWithExpiry(key, value, ttl) {
+  async setWithExpiry(key: string, value: any, ttl: number) {
     const now = new Date();
 
     // `item` is an object which contains the original value
@@ -54,7 +61,7 @@ export default class Persist {
     await this.persist.setItem(key, JSON.stringify(item));
   }
 
-  async getWithExpiry(key) {
+  async getWithExpiry(key: string) {
     const itemStr = await this.persist.getItem(key);
 
     // if the item doesn't exist, return null

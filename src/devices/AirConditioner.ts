@@ -1,8 +1,8 @@
 import {baseDevice} from '../baseDevice';
-import {LGThinQHomebridgePlatform} from '../platform';
-import {CharacteristicValue, PlatformAccessory} from 'homebridge';
-import {Device} from '../lib/Device';
-import {RangeValue} from '../lib/DeviceModel';
+import type {LGThinQHomebridgePlatform} from '../platform';
+import type {CharacteristicValue, PlatformAccessory, Service} from 'homebridge';
+import type {Device} from '../lib/Device';
+import type {RangeValue} from '../lib/DeviceModel';
 import {cToF} from '../helper';
 
 export enum FanSpeed {
@@ -23,31 +23,31 @@ enum OpMode {
 }
 
 export default class AirConditioner extends baseDevice {
-  protected service;
-  protected serviceAirQuality;
-  protected serviceSensor;
-  protected serviceHumiditySensor;
-  protected serviceLight;
-  protected serviceFanV2;
+  protected service?: Service;
+  protected serviceAirQuality: Service | undefined;
+  protected serviceSensor: Service | null | undefined;
+  protected serviceHumiditySensor: Service | null | undefined;
+  protected serviceLight: Service | null | undefined;
+  protected serviceFanV2: Service | undefined;
 
   // more feature
-  protected serviceJetMode; // jet mode
-  protected serviceQuietMode;
-  protected serviceEnergySaveMode;
+  protected serviceJetMode: Service | undefined;
+  protected serviceQuietMode: Service | undefined;
+  protected serviceEnergySaveMode: Service | undefined;
   protected jetModeModels = ['RAC_056905'];
   protected quietModeModels = ['WINF_056905'];
   protected energySaveModeModels = ['WINF_056905'];
   protected currentTargetState = 2; // default target: COOL
 
-  protected serviceLabelButtons;
+  protected serviceLabelButtons?: Service;
 
   constructor(
-    protected readonly platform: LGThinQHomebridgePlatform,
-    protected readonly accessory: PlatformAccessory,
+    protected override readonly platform: LGThinQHomebridgePlatform,
+    protected override readonly accessory: PlatformAccessory,
   ) {
     super(platform, accessory);
 
-    const device: Device = this.accessory.context.device;
+    const device: Device = this.accessory.context['device'];
 
     const {
       Service: {
@@ -70,7 +70,9 @@ export default class AirConditioner extends baseDevice {
     if (this.config.ac_temperature_sensor as boolean) {
       this.serviceSensor = this.serviceSensor || accessory.addService(TemperatureSensor);
       this.serviceSensor.updateCharacteristic(platform.Characteristic.StatusActive, false);
-      this.serviceSensor.addLinkedService(this.service);
+      if (this.service) {
+        this.serviceSensor.addLinkedService(this.service);
+      }
     } else if (this.serviceSensor) {
       accessory.removeService(this.serviceSensor);
       this.serviceSensor = null;
@@ -80,7 +82,9 @@ export default class AirConditioner extends baseDevice {
     if (this.config.ac_humidity_sensor as boolean) {
       this.serviceHumiditySensor = this.serviceHumiditySensor || accessory.addService(HumiditySensor);
       this.serviceHumiditySensor.updateCharacteristic(platform.Characteristic.StatusActive, false);
-      this.serviceSensor.addLinkedService(this.service);
+      if (this.serviceSensor && this.service) {
+        this.serviceSensor.addLinkedService(this.service);
+      }
     } else if (this.serviceHumiditySensor) {
       accessory.removeService(this.serviceHumiditySensor);
       this.serviceHumiditySensor = null;
@@ -92,7 +96,9 @@ export default class AirConditioner extends baseDevice {
       this.serviceLight.getCharacteristic(platform.Characteristic.On)
         .onSet(this.setLight.bind(this))
         .updateValue(false); // off as default
-      this.serviceLight.addLinkedService(this.service);
+      if (this.service) {
+        this.serviceLight.addLinkedService(this.service);
+      }
     } else if (this.serviceLight) {
       accessory.removeService(this.serviceLight);
       this.serviceLight = null;
@@ -129,7 +135,7 @@ export default class AirConditioner extends baseDevice {
     this.setupButton(device);
   }
 
-  public get config() {
+  public override get config() {
     return Object.assign({}, {
       ac_swing_mode: 'BOTH',
       ac_air_quality: false,
@@ -143,11 +149,11 @@ export default class AirConditioner extends baseDevice {
   }
 
   public get Status() {
-    return new ACStatus(this.accessory.context.device.snapshot, this.accessory.context.device);
+    return new ACStatus(this.accessory.context['device'].snapshot, this.accessory.context['device']);
   }
 
   async setEnergySaveActive(value: CharacteristicValue) {
-    const device: Device = this.accessory.context.device;
+    const device: Device = this.accessory.context['device'];
 
     if (this.Status.isPowerOn && this.Status.opMode === 0) {
       this.platform.ThinQ?.deviceControl(device.id, {
@@ -161,7 +167,7 @@ export default class AirConditioner extends baseDevice {
   }
 
   async setQuietModeActive(value: CharacteristicValue) {
-    const device: Device = this.accessory.context.device;
+    const device: Device = this.accessory.context['device'];
 
     if (this.Status.isPowerOn && this.Status.opMode === 0) {
       this.platform.ThinQ?.deviceControl(device.id, {
@@ -175,7 +181,7 @@ export default class AirConditioner extends baseDevice {
   }
 
   async setJetModeActive(value: CharacteristicValue) {
-    const device: Device = this.accessory.context.device;
+    const device: Device = this.accessory.context['device'];
 
     if (this.Status.isPowerOn && this.Status.opMode === 0) {
       this.platform.ThinQ?.deviceControl(device.id, {
@@ -193,7 +199,7 @@ export default class AirConditioner extends baseDevice {
       return;
     }
 
-    const device: Device = this.accessory.context.device;
+    const device: Device = this.accessory.context['device'];
     const { TargetFanState } = this.platform.Characteristic;
 
     const windStrength = value === TargetFanState.AUTO ? 8 : FanSpeed.HIGH; // 8 mean fan auto mode
@@ -206,8 +212,8 @@ export default class AirConditioner extends baseDevice {
     });
   }
 
-  public updateAccessoryCharacteristic(device: Device) {
-    this.accessory.context.device = device;
+  public override updateAccessoryCharacteristic(device: Device) {
+    this.accessory.context['device'] = device;
 
     const {
       Characteristic,
@@ -215,6 +221,10 @@ export default class AirConditioner extends baseDevice {
         Active,
       },
     } = this.platform;
+
+    if (!this.service) {
+      return;
+    }
 
     this.service.updateCharacteristic(Characteristic.Active, this.Status.isPowerOn ? Active.ACTIVE : Active.INACTIVE);
     if (this.Status.currentTemperature) {
@@ -296,7 +306,7 @@ export default class AirConditioner extends baseDevice {
       this.serviceQuietMode.updateCharacteristic(Characteristic.On, !!device.snapshot['airState.miscFuncState.silentAWHP']);
     }
 
-    if (this.energySaveModeModels.includes(device.model)) {
+    if (this.serviceEnergySaveMode && this.energySaveModeModels.includes(device.model)) {
       this.serviceEnergySaveMode.updateCharacteristic(Characteristic.On, !!device.snapshot['airState.powerSave.basic']);
     }
   }
@@ -306,7 +316,7 @@ export default class AirConditioner extends baseDevice {
       return;
     }
 
-    const device: Device = this.accessory.context.device;
+    const device: Device = this.accessory.context['device'];
     this.platform.ThinQ?.deviceControl(device.id, {
       dataKey: 'airState.lightingState.displayControl',
       dataValue: value ? 1 : 0,
@@ -347,7 +357,7 @@ export default class AirConditioner extends baseDevice {
   }
 
   async setActive(value: CharacteristicValue) {
-    const device: Device = this.accessory.context.device;
+    const device: Device = this.accessory.context['device'];
     const isOn = value as boolean ? 1 : 0;
     if (this.Status.isPowerOn && isOn) {
       return; // don't send same status
@@ -367,7 +377,7 @@ export default class AirConditioner extends baseDevice {
       return;
     }
 
-    const device: Device = this.accessory.context.device;
+    const device: Device = this.accessory.context['device'];
 
     const temperature = this.Status.convertTemperatureCelsiusFromHomekitToLG(value);
     if (temperature === this.Status.targetTemperature) {
@@ -391,8 +401,8 @@ export default class AirConditioner extends baseDevice {
     const speedValue = Math.max(1, Math.round(value as number));
 
     this.platform.log.info('Set fan speed = ', speedValue);
-    const device: Device = this.accessory.context.device;
-    const windStrength = parseInt(Object.keys(FanSpeed)[speedValue - 1]) || FanSpeed.HIGH;
+    const device: Device = this.accessory.context['device'];
+    const windStrength = parseInt(Object.keys(FanSpeed)[speedValue - 1] || '0') || FanSpeed.HIGH;
     this.platform.ThinQ?.deviceControl(device.id, {
       dataKey: 'airState.windStrength',
       dataValue: windStrength,
@@ -409,7 +419,7 @@ export default class AirConditioner extends baseDevice {
 
     const swingValue = !!value as boolean ? '100' : '0';
 
-    const device: Device = this.accessory.context.device;
+    const device: Device = this.accessory.context['device'];
 
     if (this.config.ac_swing_mode === 'BOTH') {
       this.platform.ThinQ?.deviceControl(device.id, {
@@ -444,8 +454,8 @@ export default class AirConditioner extends baseDevice {
     }
   }
 
-  async setOpMode(opMode) {
-    const device: Device = this.accessory.context.device;
+  async setOpMode(opMode: number) {
+    const device: Device = this.accessory.context['device'];
     return this.platform.ThinQ?.deviceControl(device.id, {
       dataKey: 'airState.opMode',
       dataValue: opMode,
@@ -467,11 +477,13 @@ export default class AirConditioner extends baseDevice {
       Characteristic,
     } = this.platform;
 
-    const device: Device = this.accessory.context.device;
+    const device: Device = this.accessory.context['device'];
 
     // fan controller
     this.serviceFanV2 = this.accessory.getService(Fanv2) || this.accessory.addService(Fanv2);
-    this.serviceFanV2.addLinkedService(this.service);
+    if (this.service) {
+      this.serviceFanV2.addLinkedService(this.service);
+    }
 
     this.serviceFanV2.getCharacteristic(Characteristic.Active)
       .onGet(() => {
@@ -485,6 +497,9 @@ export default class AirConditioner extends baseDevice {
 
         // do not allow change status via home app, revert to prev status in 0.1s
         setTimeout(() => {
+          if (!this.serviceFanV2) {
+            return;
+          }
           // eslint-disable-next-line max-len
           this.serviceFanV2.updateCharacteristic(Characteristic.Active, this.Status.isPowerOn ? Characteristic.Active.ACTIVE : Characteristic.Active.INACTIVE);
           this.serviceFanV2.updateCharacteristic(Characteristic.RotationSpeed, this.Status.windStrength);
@@ -533,7 +548,7 @@ export default class AirConditioner extends baseDevice {
       Characteristic,
     } = this.platform;
 
-    const device: Device = this.accessory.context.device;
+    const device: Device = this.accessory.context['device'];
 
     this.service = this.accessory.getService(HeaterCooler) || this.accessory.addService(HeaterCooler, device.name);
     this.service.setCharacteristic(Characteristic.Name, device.name);
@@ -556,7 +571,7 @@ export default class AirConditioner extends baseDevice {
         validValues: targetStates,
       })
       .onSet(this.setTargetState.bind(this))
-      .updateValue(targetStates[0]);
+      .updateValue(targetStates[0] as CharacteristicValue);
 
     const currentTemperatureValue = device.deviceModel.value('airState.tempState.current') as RangeValue;
     if (currentTemperatureValue) {
@@ -619,7 +634,7 @@ export default class AirConditioner extends baseDevice {
 
     // remove all buttons before
     for (let i=0; i<this.serviceLabelButtons.linkedServices.length; i++){
-      this.accessory.removeService(this.serviceLabelButtons.linkedServices[i]);
+      this.accessory.removeService(this.serviceLabelButtons.linkedServices[i] as Service);
     }
 
     for (let i = 0; i < this.config.ac_buttons.length; i++) {
@@ -657,12 +672,14 @@ export default class AirConditioner extends baseDevice {
         }
       });
 
-    this.serviceLabelButtons.addLinkedService(serviceButton);
+    if (this.serviceLabelButtons) {
+      this.serviceLabelButtons.addLinkedService(serviceButton);
+    }
   }
 }
 
 export class ACStatus {
-  constructor(protected data, protected device: Device) {
+  constructor(protected data: Record<string, any>, protected device: Device) {
   }
 
   /**

@@ -1,7 +1,7 @@
 import {baseDevice} from '../baseDevice';
-import {LGThinQHomebridgePlatform} from '../platform';
-import {CharacteristicValue, PlatformAccessory} from 'homebridge';
-import {Device} from '../lib/Device';
+import type {LGThinQHomebridgePlatform} from '../platform';
+import type {CharacteristicValue, PlatformAccessory, Service} from 'homebridge';
+import type {Device} from '../lib/Device';
 
 enum RotateSpeed {
   LOW = 2,
@@ -9,11 +9,11 @@ enum RotateSpeed {
 }
 
 export default class Dehumidifier extends baseDevice {
-  protected serviceDehumidifier;
-  protected serviceHumiditySensor;
+  protected serviceDehumidifier: Service;
+  protected serviceHumiditySensor: Service;
   constructor(
-    protected readonly platform: LGThinQHomebridgePlatform,
-    protected readonly accessory: PlatformAccessory,
+    protected override readonly platform: LGThinQHomebridgePlatform,
+    protected override readonly accessory: PlatformAccessory,
   ) {
     super(platform, accessory);
 
@@ -28,7 +28,7 @@ export default class Dehumidifier extends baseDevice {
       },
     } = this.platform;
 
-    const device: Device = accessory.context.device;
+    const device: Device = accessory.context['device'];
 
     this.serviceDehumidifier = accessory.getService(HumidifierDehumidifier) || accessory.addService(HumidifierDehumidifier);
     this.serviceDehumidifier.setCharacteristic(Characteristic.Name, device.name);
@@ -72,7 +72,7 @@ export default class Dehumidifier extends baseDevice {
 
   async setActive(value: CharacteristicValue) {
     this.platform.log.debug('Set Dehumidifier Active State ->', value);
-    const device: Device = this.accessory.context.device;
+    const device: Device = this.accessory.context['device'];
     const isOn = value as boolean;
     if (this.Status.isPowerOn && isOn) {
       return; // don't send same status
@@ -92,7 +92,7 @@ export default class Dehumidifier extends baseDevice {
       return;
     }
 
-    const device: Device = this.accessory.context.device;
+    const device: Device = this.accessory.context['device'];
     this.platform.ThinQ?.deviceControl(device.id, {
       dataKey: 'airState.humidity.desired',
       dataValue: value as number,
@@ -107,9 +107,9 @@ export default class Dehumidifier extends baseDevice {
       return;
     }
 
-    const device: Device = this.accessory.context.device;
+    const device: Device = this.accessory.context['device'];
     const values = Object.keys(RotateSpeed);
-    const windStrength = parseInt(values[Math.round((value as number)) - 1]) || RotateSpeed.HIGH;
+    const windStrength = parseInt(values[Math.round((value as number)) - 1] || '0') || RotateSpeed.HIGH;
     this.platform.ThinQ?.deviceControl(device.id, {
       dataKey: 'airState.windStrength',
       dataValue: windStrength,
@@ -118,7 +118,7 @@ export default class Dehumidifier extends baseDevice {
     this.updateAccessoryCharacteristic(device);
   }
 
-  public updateAccessoryCharacteristic(device: Device) {
+  public override updateAccessoryCharacteristic(device: Device) {
     super.updateAccessoryCharacteristic(device);
 
     const {
@@ -145,12 +145,12 @@ export default class Dehumidifier extends baseDevice {
   }
 
   public get Status() {
-    return new DehumidifierStatus(this.accessory.context.device.snapshot);
+    return new DehumidifierStatus(this.accessory.context['device'].snapshot);
   }
 }
 
 export class DehumidifierStatus {
-  constructor(protected data) {}
+  constructor(protected data: Record<string, any>) {}
 
   public get isPowerOn() {
     return this.data['airState.operation'] as boolean;

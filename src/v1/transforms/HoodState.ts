@@ -1,4 +1,4 @@
-import {DeviceModel} from '../../lib/DeviceModel';
+import type {DeviceModel} from '../../lib/DeviceModel';
 
 export default function HoodState(deviceModel: DeviceModel, decodedMonitor) {
   return {

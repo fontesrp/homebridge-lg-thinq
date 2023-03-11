@@ -75,7 +75,6 @@ program
       // eslint-disable-next-line no-console
       console.info('Your refresh_token:', refresh_token);
       process.exit(0);
-      return;
     }
 
     const username = url.searchParams.get('user_id'),
@@ -93,7 +92,6 @@ program
       // eslint-disable-next-line no-console
       console.error('redirected url not valid, please try again or use LG account method');
       process.exit(0);
-      return;
     }
 
     try {

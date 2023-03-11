@@ -1,19 +1,19 @@
 import {baseDevice} from '../baseDevice';
-import {LGThinQHomebridgePlatform} from '../platform';
-import {PlatformAccessory} from 'homebridge';
-import {Device} from '../lib/Device';
+import type {LGThinQHomebridgePlatform} from '../platform';
+import type {PlatformAccessory, Service} from 'homebridge';
+import type {Device} from '../lib/Device';
 import {WasherDryerStatus} from './WasherDryer';
 
 export default class Dishwasher extends baseDevice {
   public isRunning = false;
 
-  protected serviceDishwasher;
-  protected serviceDoorOpened;
-  protected serviceEventFinished;
+  protected serviceDishwasher: Service;
+  protected serviceDoorOpened: Service;
+  protected serviceEventFinished: Service | undefined;
 
   constructor(
-    protected readonly platform: LGThinQHomebridgePlatform,
-    protected readonly accessory: PlatformAccessory,
+    protected override readonly platform: LGThinQHomebridgePlatform,
+    protected override readonly accessory: PlatformAccessory,
   ) {
     super(platform, accessory);
 
@@ -26,7 +26,7 @@ export default class Dishwasher extends baseDevice {
       Characteristic,
     } = this.platform;
 
-    const device = accessory.context.device;
+    const device = accessory.context['device'];
 
     this.serviceDishwasher = accessory.getService(Valve) || accessory.addService(Valve, 'Dishwasher');
     this.serviceDishwasher.setCharacteristic(Characteristic.Name, device.name);
@@ -56,7 +56,7 @@ export default class Dishwasher extends baseDevice {
     throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.NOT_ALLOWED_IN_CURRENT_STATE);
   }
 
-  public updateAccessoryCharacteristic(device: Device) {
+  public override updateAccessoryCharacteristic(device: Device) {
     super.updateAccessoryCharacteristic(device);
 
     const {Characteristic} = this.platform;
@@ -76,16 +76,16 @@ export default class Dishwasher extends baseDevice {
   }
 
   public get Status() {
-    return new DishwasherStatus(this.accessory.context.device.snapshot?.dishwasher, this.accessory.context.device.deviceModel);
+    return new DishwasherStatus(this.accessory.context['device'].snapshot?.dishwasher, this.accessory.context['device'].deviceModel);
   }
 
-  public get config() {
+  public override get config() {
     return Object.assign({}, {
       dishwasher_trigger: false,
     }, super.config);
   }
 
-  public update(snapshot) {
+  public override update(snapshot: { dishwasher: any }) {
     super.update(snapshot);
 
     const dishwasher = snapshot.dishwasher;
@@ -108,7 +108,9 @@ export default class Dishwasher extends baseDevice {
 
         // turn it off after 10 minute
         setTimeout(() => {
-          this.serviceEventFinished.updateCharacteristic(OccupancyDetected, OccupancyDetected.OCCUPANCY_NOT_DETECTED);
+          if (this.serviceEventFinished) {
+            this.serviceEventFinished.updateCharacteristic(OccupancyDetected, OccupancyDetected.OCCUPANCY_NOT_DETECTED);
+          }
         }, 10000 * 60);
       }
 
@@ -123,11 +125,11 @@ export default class Dishwasher extends baseDevice {
 
 // re-use some status in washer
 export class DishwasherStatus extends WasherDryerStatus {
-  public get isRunning() {
-    return this.isPowerOn && this.data?.state === this.deviceModel.lookupMonitorName('state', '@DW_STATE_RUNNING_W');
+  public override get isRunning() {
+    return this.isPowerOn && this.data?.['state'] === this.deviceModel.lookupMonitorName('state', '@DW_STATE_RUNNING_W');
   }
 
   public get isDoorClosed() {
-    return this.data?.door === this.deviceModel.lookupMonitorName('door', '@CP_OFF_EN_W');
+    return this.data?.['door'] === this.deviceModel.lookupMonitorName('door', '@CP_OFF_EN_W');
   }
 }

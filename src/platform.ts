@@ -1,4 +1,4 @@
-import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service, Characteristic } from 'homebridge';
+import type { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service, Characteristic } from 'homebridge';
 
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
 import { Helper } from './helper';
@@ -6,7 +6,15 @@ import {ThinQ} from './lib/ThinQ';
 import {EventEmitter} from 'events';
 import {PlatformType} from './lib/constants';
 import {ManualProcessNeeded, NotConnectedError} from './errors';
-import {Device} from './lib/Device';
+import type {Device} from './lib/Device';
+import type AirConditioner from './devices/AirConditioner';
+import type AirPurifier from './devices/AirPurifier';
+import type Dehumidifier from './devices/Dehumidifier';
+import type Dishwasher from './devices/Dishwasher';
+import type Refrigerator from './devices/Refrigerator';
+import type Styler from './devices/Styler';
+import type WasherDryer from './devices/WasherDryer';
+import type { RangeHood } from './v1/devices';
 
 /**
  * HomebridgePlatform
@@ -22,7 +30,7 @@ export class LGThinQHomebridgePlatform implements DynamicPlatformPlugin {
 
   public readonly ThinQ: ThinQ;
   public readonly events: EventEmitter;
-  private readonly intervalTime;
+  private readonly intervalTime: number | undefined;
 
   // enable thinq1 support
   private readonly enable_thinq1: boolean = false;
@@ -34,13 +42,13 @@ export class LGThinQHomebridgePlatform implements DynamicPlatformPlugin {
   ) {
     this.events = new EventEmitter();
 
-    this.enable_thinq1 = config.thinq1 as boolean;
-    this.config.devices = this.config.devices || [];
+    this.enable_thinq1 = config['thinq1'] as boolean;
+    this.config['devices'] = this.config['devices'] || [];
 
-    this.intervalTime = (config.refresh_interval || 5) * 1000;
+    this.intervalTime = (config['refresh_interval'] || 5) * 1000;
     this.ThinQ = new ThinQ(this, config, log);
 
-    if (!config.country || !config.language || !((config.username && config.password) || config.refresh_token)) {
+    if (!config['country'] || !config['language'] || !((config['username'] && config['password']) || config['refresh_token'])) {
       this.log.error('Missing required config parameter.');
       return;
     }
@@ -111,7 +119,7 @@ export class LGThinQHomebridgePlatform implements DynamicPlatformPlugin {
 
       this.log.debug('Device data: ', JSON.stringify(device.data));
 
-      if (this.config.devices.length && !this.config.devices.find(enabled => enabled.id === device.id)) {
+      if (this.config['devices'].length && !this.config['devices'].find(enabled => enabled.id === device.id)) {
         this.log.debug('Device skipped: ', device.id);
         continue;
       }
@@ -133,14 +141,14 @@ export class LGThinQHomebridgePlatform implements DynamicPlatformPlugin {
         continue;
       }
 
-      let lgThinQDevice;
+      let lgThinQDevice: WasherDryer | AirConditioner | Refrigerator | AirPurifier | RangeHood | Dishwasher | Dehumidifier | Styler;
 
       const existingAccessory = this.accessories.find(accessory => accessory.UUID === device.id);
       if (existingAccessory) {
         accessoriesToRemoveUUID.splice(accessoriesToRemoveUUID.indexOf(device.id), 1);
 
         this.log.info('Restoring existing accessory:', device.toString());
-        existingAccessory.context.device = device;
+        existingAccessory.context['device'] = device;
         lgThinQDevice = new accessoryType(this, existingAccessory);
       } else {
         this.log.info('Adding new accessory:', device.toString());
@@ -148,7 +156,7 @@ export class LGThinQHomebridgePlatform implements DynamicPlatformPlugin {
         const category = Helper.category(device);
         // create a new accessory
         const accessory = new this.api.platformAccessory(device.name, device.id, category);
-        accessory.context.device = device;
+        accessory.context['device'] = device;
 
         lgThinQDevice = new accessoryType(this, accessory);
 
@@ -176,7 +184,7 @@ export class LGThinQHomebridgePlatform implements DynamicPlatformPlugin {
 
   protected async startMonitor() {
     // thinq2 device
-    const thinq2devices = this.accessories.filter(accessory => accessory.context.device.platform === PlatformType.ThinQ2);
+    const thinq2devices = this.accessories.filter(accessory => accessory.context['device'].platform === PlatformType.ThinQ2);
 
     if (thinq2devices.length) {
       setInterval(() => {
@@ -193,7 +201,7 @@ export class LGThinQHomebridgePlatform implements DynamicPlatformPlugin {
       const refreshList = {};
 
       thinq2devices.forEach(accessory => {
-        const device: Device = accessory.context.device;
+        const device: Device = accessory.context['device'];
         refreshList[device.id] = setTimeout(() => {
           this.events.once('refresh.'+device.id, (snapshot) => {
             this.events.emit(device.id, snapshot);
@@ -219,12 +227,12 @@ export class LGThinQHomebridgePlatform implements DynamicPlatformPlugin {
     }
 
     // polling thinq1 device
-    this.log.info('Start polling device data every '+ this.config.refresh_interval +' second.');
+    this.log.info('Start polling device data every '+ this.config['refresh_interval'] +' second.');
     const ThinQ = this.ThinQ;
     const interval = setInterval(async () => {
       try {
         for (const accessory of this.accessories) {
-          const device: Device = accessory.context.device;
+          const device: Device = accessory.context['device'];
           if (device.platform === PlatformType.ThinQ1 && this.enable_thinq1) {
             const deviceWithSnapshot = await ThinQ.pollMonitor(device);
             if (deviceWithSnapshot.snapshot.raw !== null) {

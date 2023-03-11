@@ -1,4 +1,4 @@
-import {DeviceModel} from '../../lib/DeviceModel';
+import type {DeviceModel} from '../../lib/DeviceModel';
 import {lookupEnumIndex, loopupEnum} from '../helper';
 
 export enum WasherState {

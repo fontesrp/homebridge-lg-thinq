@@ -1,12 +1,12 @@
 import {default as WasherV2} from '../../devices/WasherDryer';
-import {LGThinQHomebridgePlatform} from '../../platform';
+import type {LGThinQHomebridgePlatform} from '../../platform';
 import {CharacteristicValue, Perms, PlatformAccessory} from 'homebridge';
-import {Device} from '../../lib/Device';
+import type {Device} from '../../lib/Device';
 
 export default class Washer extends WasherV2 {
   constructor(
-    protected readonly platform: LGThinQHomebridgePlatform,
-    protected readonly accessory: PlatformAccessory,
+    protected override readonly platform: LGThinQHomebridgePlatform,
+    protected override readonly accessory: PlatformAccessory,
   ) {
     super(platform, accessory);
 
@@ -23,8 +23,8 @@ export default class Washer extends WasherV2 {
     });
   }
 
-  async setActive(value: CharacteristicValue) {
-    const device: Device = this.accessory.context.device;
+  override async setActive(value: CharacteristicValue) {
+    const device: Device = this.accessory.context['device'];
     await this.platform.ThinQ?.thinq1DeviceControl(device, 'Power', value as boolean ? 'On' : 'Off');
   }
 }

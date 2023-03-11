@@ -4,7 +4,7 @@ import * as qs from 'qs';
 import {URL} from 'url';
 import {AuthenticationError, ManualProcessNeededErrorCode, TokenError} from '../errors';
 import * as constants from './constants';
-import {Gateway} from './Gateway';
+import type {Gateway} from './Gateway';
 import {requestClient} from './request';
 import {Session} from './Session';
 
@@ -27,7 +27,7 @@ export class Auth {
     return this.loginStep2(username, hash.update(password).digest('hex'));
   }
 
-  public async loginStep2(username, encrypted_password, extra_headers?: any) {
+  public async loginStep2(username: string, encrypted_password: string, extra_headers?: any) {
     const headers = this.defaultEmpHeaders;
 
     const preLoginData = {

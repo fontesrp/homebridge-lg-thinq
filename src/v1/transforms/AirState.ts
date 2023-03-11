@@ -1,4 +1,4 @@
-import {DeviceModel, RangeValue} from '../../lib/DeviceModel';
+import type {DeviceModel, RangeValue} from '../../lib/DeviceModel';
 import {loopupEnum} from '../helper';
 
 export enum ACOperation {

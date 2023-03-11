@@ -4,15 +4,15 @@ export class Session {
   constructor(
     private _accessToken: string,
     private readonly _refreshToken: string,
-    private expiresIn: number,
+    expiresIn: number,
   ) {
     this._refreshToken = _refreshToken;
     this.newToken(_accessToken, expiresIn);
   }
 
-  public newToken(accessToken, expiresIn): void {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public newToken(accessToken: string, _expiresIn: number): void {
     this._accessToken = accessToken;
-    this.expiresIn = expiresIn;
   }
 
   public get accessToken(): string {

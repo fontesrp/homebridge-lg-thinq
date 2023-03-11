@@ -1,5 +1,5 @@
 import { DeviceType } from './constants';
-import {DeviceModel} from './DeviceModel';
+import type {DeviceModel} from './DeviceModel';
 
 export class Device {
   public deviceModel!: DeviceModel;
